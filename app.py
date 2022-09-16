@@ -30,7 +30,10 @@ async def on_member_join(member: discord.Member):
 @commands.has_role("manager")
 async def purge(ctx: commands.Context, n_messages: int = 10):
     "Deletes n_messages messages in the channel that this command is sent."
-    
+    if n_messages == -1:
+        n_messages = None
+
+    await ctx.channel.purge(limit = n_messages)
 
 @bot.command(name = "manager")
 @commands.has_permissions(administrator = True)

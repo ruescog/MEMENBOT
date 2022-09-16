@@ -1,6 +1,5 @@
 # IMPORTS
 # discord
-from http.client import MOVED_PERMANENTLY
 import discord
 from discord.ext import commands
 # credentials reading
@@ -8,6 +7,7 @@ import yaml
 # behavior
 import wellcome
 import utils
+from textblob import TextBlob
 
 
 # BOT CONFIG
@@ -25,16 +25,8 @@ async def on_member_join(member: discord.Member):
     view = wellcome.Menu()
     await message.edit(view = view)
 
+
 # COMMANDS
-@bot.command(name = "purge")
-@commands.has_role("manager")
-async def purge(ctx: commands.Context, n_messages: int = 10):
-    "Deletes n_messages messages in the channel that this command is sent."
-    if n_messages == -1:
-        n_messages = None
-
-    await ctx.channel.purge(limit = n_messages)
-
 @bot.command(name = "manager")
 @commands.has_permissions(administrator = True)
 async def manager(ctx: commands.Context, member: discord.Member):
@@ -44,5 +36,23 @@ async def manager(ctx: commands.Context, member: discord.Member):
         await member.remove_roles(role)
     else:
         await member.add_roles(role)
+
+
+@bot.command(name = "purge")
+@commands.has_role("manager")
+async def purge(ctx: commands.Context, n_messages: int = 10):
+    "Deletes n_messages messages in the channel where this command is sent. If n_messages is equal to -1, deletes all the messages."
+    if n_messages == -1:
+        n_messages = None
+
+    await ctx.channel.purge(limit = n_messages)
+
+
+@bot.command(name = "translate")
+async def translate(ctx: commands.Context, message: str, language_from: str = "es", language_to: str = "en"):
+    blob = TextBlob(message)
+    response = str(blob.translate(from_lang = language_from, to = language_to))
+    await ctx.reply(response)
+
 
 bot.run(secrets["bot_token"])

@@ -50,6 +50,7 @@ async def purge(ctx: commands.Context, n_messages: int = 10):
 
 @bot.command(name = "translate")
 async def translate(ctx: commands.Context, message: str, language_from: str = "es", language_to: str = "en"):
+    "Translates a message from a language into another."
     blob = TextBlob(message)
     response = str(blob.translate(from_lang = language_from, to = language_to))
     await ctx.reply(response)

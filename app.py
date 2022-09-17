@@ -5,7 +5,7 @@ from discord.ext import commands
 # credentials reading
 import yaml
 # behavior
-import wellcome
+import interfaces
 import utils
 from textblob import TextBlob
 
@@ -22,11 +22,21 @@ async def on_member_join(member: discord.Member):
     system_channel = guild.system_channel
     message = f"Hola {member.mention}, bienvenido a la comunidad."
     message = await system_channel.send(message)
-    view = wellcome.Menu()
+    view = interfaces.TranslateInterface()
     await message.edit(view = view)
 
 
 # COMMANDS
+@bot.command(name = "delete_category")
+@commands.has_role("manager")
+async def delete_category(ctx: commands.Context):
+    "Deletes the category where this command is sent in a recursively way."
+    category = ctx.channel.category
+    for channel in category.channels:
+        await channel.delete()
+    
+    await category.delete()
+
 @bot.command(name = "manager")
 @commands.has_permissions(administrator = True)
 async def manager(ctx: commands.Context, member: discord.Member):

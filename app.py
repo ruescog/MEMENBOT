@@ -22,20 +22,38 @@ async def on_member_join(member: discord.Member):
     system_channel = guild.system_channel
     message = f"Hola {member.mention}, bienvenido a la comunidad."
     message = await system_channel.send(message)
-    view = interfaces.TranslateInterface()
-    await message.edit(view = view)
+    await message.edit(view = interfaces.TranslateInterface())
 
 
 # COMMANDS
-@bot.command(name = "delete_category")
+@bot.command(name = "category_delete")
 @commands.has_role("manager")
-async def delete_category(ctx: commands.Context):
+async def category_delete(ctx: commands.Context):
     "Deletes the category where this command is sent in a recursively way."
     category = ctx.channel.category
     for channel in category.channels:
         await channel.delete()
-    
+
     await category.delete()
+
+
+@bot.command(name = "league_new")
+@commands.has_role("manager")
+async def league_new(ctx: commands.Context, league_name: str):
+    "Creates the infraestructure needed to manage a league."
+    league_category = await ctx.guild.create_category_channel(league_name)
+    league_general = await league_category.create_text_channel("General")
+    league_enrolment = await league_category.create_text_channel("Inscripciones")
+    league_matches = await league_category.create_text_channel("Partidos")
+    league_top = await league_category.create_text_channel("Top")
+
+    message = f"Bienvenidos a la _{league_name}_ liga de Blood Bowl.\n"
+    message += f"Para registrarse, consulta la información en {league_enrolment.mention}.\n"
+    message += f"También puedes consultar los partidos jugados en {league_matches.mention}.\n"
+    message += f"Finalmente, puedes ver el podium en {league_top.mention}."
+    message = await league_general.send(message)
+    await message.edit(view = interfaces.TranslateInterface())
+
 
 @bot.command(name = "manager")
 @commands.has_permissions(administrator = True)

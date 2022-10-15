@@ -1,5 +1,6 @@
 # IMPORTS
 # discord
+from typing import Any
 import discord
 from discord.ext import commands
 # credentials reading
@@ -7,6 +8,7 @@ import yaml
 # behavior
 import interfaces
 import utils
+import league
 from textblob import TextBlob
 
 
@@ -14,14 +16,30 @@ from textblob import TextBlob
 bot = commands.Bot(command_prefix = "m!", intents = discord.Intents.all())
 with open(".secrets.yml") as file:
     secrets = yaml.load(file, Loader = yaml.FullLoader)
+with open("settings.yml") as file:    
+    settings = yaml.load(file, Loader = yaml.FullLoader)
 
 # EVENT LISTENER
 @bot.event
 async def on_member_join(member: discord.Member):
-    guild = member.guild
-    system_channel = guild.system_channel
-    message = f"Hola {member.mention}, bienvenido a la comunidad."
-    message = await system_channel.send(message, view = interfaces.TranslateInterface())
+    guild: discord.Guild = member.guild
+    system_channel: discord.TextChannel = guild.system_channel
+    message: str = f"Hola {member.mention}, bienvenido a la comunidad."
+    await system_channel.send(message, view = interfaces.TranslateInterface())
+
+
+@bot.event
+async def on_message(message: discord.Message):
+    if message.author.id == 782341586188632084: # its me
+        return
+
+    if message.content[:2] == "m!":
+        await bot.process_commands(message)
+    else:
+        channel: discord.TextChannel = message.channel
+
+        if channel.id == int(settings["league_results_channel"]):
+            league.process_message(message)
 
 
 # COMMANDS
@@ -29,39 +47,20 @@ async def on_member_join(member: discord.Member):
 @commands.has_role("manager")
 async def category_delete(ctx: commands.Context):
     "Deletes the category where this command is sent in a recursively way."
-    category = ctx.channel.category
+    category: discord.CategoryChannel = ctx.channel.category
     for channel in category.channels:
         await channel.delete()
 
     await category.delete()
 
 
-@bot.command(name = "league_new")
+@bot.command(name = "config")
 @commands.has_role("manager")
-async def league_new(ctx: commands.Context, league_name: str):
-    "Creates the infraestructure needed to manage a league."
-    league_category: discord.CategoryChannel = await ctx.guild.create_category_channel(league_name)
-    league_general: discord.TextChannel = await league_category.create_text_channel("General")
-    league_enrolment: discord.TextChannel = await league_category.create_text_channel("Inscripciones")
-    league_matches: discord.TextChannel = await league_category.create_text_channel("Partidos")
-    league_top: discord.TextChannel = await league_category.create_text_channel("Top")
-
-    message: str = f"Bienvenidos a la _{league_name}_ liga de Blood Bowl.\n"
-    message += f"Para registrarse, consulta la información en {league_enrolment.mention}.\n"
-    message += f"También puedes consultar los partidos jugados en {league_matches.mention}.\n"
-    message += f"Finalmente, puedes ver el podium en {league_top.mention}."
-    message: discord.Message = await league_general.send(message, view = interfaces.TranslateInterface())
- 
-    message: str = "Instrucciones de la liga."
-    message: discord.Message = await league_enrolment.send(
-        content = None,
-        embed = discord.Embed(
-            title = "Inscripciones para la liga",
-            color = discord.Colour.dark_gold(),
-            description = "Reglas."
-        ),
-        view = interfaces.LeagueInterface()
-    )
+async def config(ctx: commands.Context, key: str, value):
+    "Sets the channel as the default match reporting channel"
+    global settings
+    settings = utils.save_settings(settings, key, value)
+    await ctx.reply(f"New setting saved: {key} - {value}")
 
 
 @bot.command(name = "manager")

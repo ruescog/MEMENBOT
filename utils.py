@@ -1,4 +1,5 @@
 import discord
+import yaml
 
 def ifnone(*args):
     for arg in args:
@@ -41,3 +42,11 @@ async def get_role(guild: discord.Guild, role_name: str = None):
     "Gives the role object from a role name."
     role_name = role_name.lower()
     return ifnone(*list(filter(lambda role: role.name.lower() == role_name, guild.roles)))
+
+def save_settings(settings: dict, key: str, value):
+    settings.update({key: value})
+
+    with open("settings.yml", "w") as file:    
+        yaml.dump(settings, file)
+
+    return settings

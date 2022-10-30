@@ -1,5 +1,5 @@
 import discord
-import yaml
+import json
 
 def ifnone(*args):
     for arg in args:
@@ -7,6 +7,18 @@ def ifnone(*args):
             return arg
     
     return None
+
+def volatile(channel: discord.TextChannel):
+    settings = load_settings()
+    for volatile_channel in settings["volatile_channels"]:
+        if channel.id == int(volatile_channel):
+            return settings["volatile_channels"][volatile_channel] * 60
+    
+    return 0
+
+def is_league(channel: discord.TextChannel):
+    settings = load_settings()
+    return channel.id == settings["channel_league"]
 
 def races():
     return [
@@ -43,10 +55,14 @@ async def get_role(guild: discord.Guild, role_name: str = None):
     role_name = role_name.lower()
     return ifnone(*list(filter(lambda role: role.name.lower() == role_name, guild.roles)))
 
-def save_settings(settings: dict, key: str, value):
-    settings.update({key: value})
+def load_settings():
+    with open("settings.json") as file:    
+        return json.load(file)
 
-    with open("settings.yml", "w") as file:    
-        yaml.dump(settings, file)
+def save_settings(key: str, value):
+    settings = load_settings()
+    settings.update({key: value})
+    with open("settings.json", "w") as file:    
+        json.dump(settings, file)
 
     return settings
